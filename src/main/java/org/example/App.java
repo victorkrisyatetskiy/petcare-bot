@@ -12,7 +12,7 @@ public class App
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
             botsApi.registerBot(new PetCareBot());
-            System.out.println("Bot is ready for work");
+            System.out.println("Bot is ready for work!");
         }catch (TelegramApiException e){
             e.printStackTrace();
         }

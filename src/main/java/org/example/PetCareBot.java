@@ -8,7 +8,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 public class PetCareBot extends TelegramLongPollingBot {
         @Override
         public String getBotToken(){
-            return "";
+            return "8080774321:AAEgCZFf4g4sVxF3-sVAWCHbR_2SfUJSCV0";
         }
 
     @Override
@@ -35,6 +35,6 @@ public class PetCareBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "";
+        return "viktor_pet_care_bot";
     }
 }
