@@ -5,10 +5,36 @@ import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 public class PetCareBot extends TelegramLongPollingBot {
+
+    private String botToken;
+    private String botUsername;
+
+    public PetCareBot(){
+        loadConfig();
+    }
+
+    private void loadConfig() {
+        try {
+            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("config.properties");
+            Properties prop = new Properties();
+            prop.load(inputStream);
+
+            botToken = prop.getProperty("bot.token");
+            botUsername = prop.getProperty("bot.username");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
     @Override
     public String getBotToken() {
-        return "8080774321:AAEgCZFf4g4sVxF3-sVAWCHbR_2SfUJSCV0";
+        return botToken;
     }
 
     @Override
@@ -121,6 +147,6 @@ public class PetCareBot extends TelegramLongPollingBot {
 
     @Override
     public String getBotUsername() {
-        return "viktor_pet_care_bot";
+        return botUsername;
     }
 }

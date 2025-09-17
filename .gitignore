@@ -36,3 +36,16 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+# Configuration files with secrets
+config.properties
+*.env
+
+# IDE files
+.idea/
+*.iml
+
+# Compiled files
+target/
+*.class
+*.jar
