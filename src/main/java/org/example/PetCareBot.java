@@ -77,7 +77,10 @@ public class PetCareBot extends TelegramLongPollingBot {
                         "/myvaccinations - show vaccinations\n" +
                         "<b>Medicines</b>\n" +
                         "/addmedecine - add new Medicine\n" +
-                        "/mymedicines - show medicines");
+                        "/mymedicines - show medicines\n" +
+                        "<b>Delete</b>\n" +
+                        "/deletemedicine - remove medicine\n" +
+                        "/deletevacination - remove vaccination");
             } else if (messageText.equals("/addnewpet")) {
                 message.setText("Enter our pet's details in format:\n" +
                         "<code>Name, Type, Breed, YYYY-MM-DD</code>\n\n");
@@ -210,6 +213,67 @@ public class PetCareBot extends TelegramLongPollingBot {
                     message.setText(response.toString());
                 } else {
                     message.setText("No medicines with your ID. Use /addmedicine");
+                }
+
+            } else if (messageText.equals("/deletemedicine")) {
+                List<Medicine> medicines = usersMeds.get(chatId);
+                if (medicines != null && !medicines.isEmpty()) {
+                    StringBuilder response = new StringBuilder("Select medicine fo delete: \n\n");
+                    for (int i = 0; i < medicines.size(); i++) {
+                        Medicine med = medicines.get(i);
+                        response.append(i + 1).append(". ").append(med.getName()).append("\n");
+                    }
+                    response.append("\nReply with number to delete");
+                    message.setText(response.toString());
+                } else {
+                    message.setText("No medicine to delete");
+                }
+
+            } else if (messageText.equals("/deletevaccination")) {
+                List<Vaccination> vaccinations = usersVacc.get(chatId);
+                if (vaccinations != null && !vaccinations.isEmpty()) {
+                    StringBuilder response = new StringBuilder("Select vaccination to delete: \n\n");
+                    for (int i = 0; i < vaccinations.size(); i++) {
+                        Vaccination vacc = vaccinations.get(i);
+                        response.append(i + 1).append(". ").append(vacc.getNextDate());
+
+                    }
+                    response.append("\nReply with the number to delete");
+                    message.setText(response.toString());
+                } else {
+                    message.setText("No vaccination to delete");
+                }
+
+            } else if (messageText.matches("\\d+") && usersMeds.containsKey(chatId)) {
+                {
+                    try {
+                        int index = Integer.parseInt(messageText) - 1;
+                        List<Medicine> medicines = usersMeds.get(chatId);
+                        if (index >= 0 && index < medicines.size()) {
+                            Medicine removed = medicines.remove(index);
+                            message.setText("Removed: " + removed.getName());
+                        } else {
+                            message.setText("Invalid number");
+                        }
+                    } catch (NumberFormatException e) {
+                        message.setText("Please enter a number");
+                    }
+                }
+
+            } else if (messageText.matches("\\d+") && usersVacc.containsKey(chatId)) {
+                {
+                    try{
+                        int index = Integer.parseInt(messageText) - 1;
+                        List<Vaccination> vaccinations = usersVacc.get(chatId);
+                        if (index >= 0 && index < vaccinations.size()){
+                            Vaccination removed = vaccinations.remove(index);
+                            message.setText("Removed: " + removed.getName());
+                        } else {
+                            message.setText("Invalid number");
+                        }
+                    } catch (NumberFormatException){
+                        message.setText("Please enter a number");
+                    }
                 }
 
             } else {
