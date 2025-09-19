@@ -5,22 +5,22 @@ import java.time.LocalDate;
 public class Vaccination {
 
     private String name;
-    private LocalDate date;
-    private LocalDate nextDate;
+    private String date;
+    private String nextDate;
 
     public String getName() {
         return name;
     }
 
-    public LocalDate getDate() {
+    public String getDate() {
         return date;
     }
 
-    public LocalDate getNextDate() {
+    public String getNextDate() {
         return nextDate;
     }
 
-    public Vaccination(String name, LocalDate date, LocalDate nextDate) {
+    public Vaccination(String name, String date, String nextDate) {
         this.name = name;
         this.date = date;
         this.nextDate = nextDate;

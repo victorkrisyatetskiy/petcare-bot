@@ -6,9 +6,9 @@ public class Pet {
     private String name;
     private String type;
     private String breed;
-    private LocalDate birthDate;
+    private String birthDate;
 
-    public Pet(String name, String type, String breed, LocalDate birthDate) {
+    public Pet(String name, String type, String breed, String birthDate) {
         this.name = name;
         this.type = type;
         this.breed = breed;
@@ -27,7 +27,7 @@ public class Pet {
         return breed;
     }
 
-    public LocalDate getBirthDate() {
+    public String getBirthDate() {
         return birthDate;
     }
 }

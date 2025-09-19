@@ -1,20 +1,32 @@
 package org.example;
 
+import org.example.models.Medicine;
+import org.example.models.Pet;
+import org.example.models.Vaccination;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Properties;
 
 public class PetCareBot extends TelegramLongPollingBot {
 
+    private HashMap<Long, Pet> usersPets = new HashMap<>();
+    private HashMap<Long, ArrayList<Vaccination>> usersVacc = new HashMap<>();
+    private HashMap<Long, ArrayList<Medicine>> usersMeds = new HashMap<>();
+
+    private Pet currentPet;
+    private Vaccination currentVaccination;
+    private Medicine currentMedicine;
+
     private String botToken;
     private String botUsername;
 
-    public PetCareBot(){
+    public PetCareBot() {
         loadConfig();
     }
 
@@ -65,8 +77,16 @@ public class PetCareBot extends TelegramLongPollingBot {
                 message.setText("Enter our pet's details in format:\n" +
                         "<code>Name, Type, Breed, YYYY-MM-DD</code>\n\n");
             } else if (messageText.equals("/mypet")) {
+                Pet pet = usersPets.get(chatId);
+                if (pet != null){
                 message.setText("Information about your pet:\n\n" +
-                        "<code>Name: Name\nType: Type\nBreed: Breed\nDate of birth: 2022-22-22</code>");
+                        "Name: " + pet.getName() + "\n" +
+                        "Type: " + pet.getType() + "\n" +
+                        "Breed: " + pet.getBreed() + "\n" +
+                        "Date of birth: " + pet.getBirthDate());
+                }else {
+                    message.setText("No pets with your ID. Use /addnewpet");
+                }
             } else if (messageText.equals("/addvaccination")) {
                 message.setText("Enter vaccination details in format:\n" +
                         "<code>Name, YYYY-MM-DD, YYYY-MM-DD</code>\n\n");
@@ -81,6 +101,8 @@ public class PetCareBot extends TelegramLongPollingBot {
                     String dosage = parts[1];
                     String schedule = parts[2];
                     String nextDate = parts[3];
+
+                    currentMedicine = new Medicine(name, dosage, schedule, nextDate);
 
                     message.setText("Medicine data received!\n\n" +
                             "Name: " + name + "\n" +
@@ -100,6 +122,8 @@ public class PetCareBot extends TelegramLongPollingBot {
                     String date = parts[1];
                     String nextDate = parts[2];
 
+                    currentVaccination = new Vaccination(name, date, nextDate);
+
                     message.setText("Vaccination data received!\n\n" +
                             "Name: " + name + "\n" +
                             "Date: " + date + "\n" +
@@ -116,6 +140,8 @@ public class PetCareBot extends TelegramLongPollingBot {
                     String breed = parts[2];
                     String birthDate = parts[3];
 
+                    currentPet = new Pet(name, type, breed, birthDate);
+
                     message.setText("Pet data received!\n\n" +
                             "Name: " + name + "\n" +
                             "Type: " + type + "\n" +
@@ -126,11 +152,32 @@ public class PetCareBot extends TelegramLongPollingBot {
                     message.setText("Mistake. Use format: /addmedicine");
                 }
             } else if (messageText.equals("/savepet")) {
-                message.setText("Pet saved! Use /mypet to view");
+                if (currentPet != null) {
+                    usersPets.put(chatId, currentPet);
+                    message.setText("Pet saved! Use /mypet to view");
+                    currentPet = null;
+                } else {
+                    message.setText("No pet data to save.");
+                }
             } else if (messageText.equals("/savevacc")) {
-                message.setText("Vaccination saved!");
+                if (currentVaccination != null) {
+                    usersVacc.putIfAbsent(chatId, new ArrayList<>());
+                    usersVacc.get(chatId).add(currentVaccination);
+                    message.setText("Vaccination saved!");
+                    currentVaccination = null;
+                } else {
+                    message.setText("No vaccination data to save.");
+                }
             } else if (messageText.equals("/savemed")) {
-                message.setText("Medicine saved!");
+                if (currentMedicine != null) {
+                    usersMeds.putIfAbsent(chatId, new ArrayList<>());
+                    usersMeds.get(chatId).add(currentMedicine);
+                    message.setText("Medicine saved!");
+                    currentMedicine = null;
+                } else {
+                    message.setText("No medicine data to save.");
+                }
+
             } else {
                 message.setText("I don't understand this command yet");
             }

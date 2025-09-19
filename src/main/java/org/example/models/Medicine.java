@@ -6,10 +6,10 @@ public class Medicine {
 
     private String name;
     private String dosage;
-    private LocalDate schedule;
-    private LocalDate nextDate;
+    private String schedule;
+    private String nextDate;
 
-    public Medicine(String name, String dosage, LocalDate schedule, LocalDate nextDate) {
+    public Medicine(String name, String dosage, String schedule, String nextDate) {
         this.name = name;
         this.dosage = dosage;
         this.schedule = schedule;
@@ -24,11 +24,11 @@ public class Medicine {
         return dosage;
     }
 
-    public LocalDate getSchedule() {
+    public String getSchedule() {
         return schedule;
     }
 
-    public LocalDate getNextDate() {
+    public String getNextDate() {
         return nextDate;
     }
 }
