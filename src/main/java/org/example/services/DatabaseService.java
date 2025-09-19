@@ -131,7 +131,7 @@ public class DatabaseService {
     }
 
     public void saveVaccination(long chatId, Vaccination vaccination){
-        String sql = "INSERT INTO vaccinations (chat_id, name, date, next_date) VALUES(?, ?, ?, ?)";
+        String sql = "SELECT * FROM vaccinations WHERE chat_id = ?";
         try (Connection con = DriverManager.getConnection(DB_URL);
              PreparedStatement preparedStatement = con.prepareStatement(sql)) {
                  preparedStatement.setLong(1, chatId);
@@ -142,5 +142,24 @@ public class DatabaseService {
         } catch (SQLException e) {
             e.getMessage();
         }
+    }
+
+    public Vaccination getVaccination(long chatId){
+        String sql = "INSERT INTO medicines (chat_id, name, date, next_date) VALUES(?, ?, ?, ?)";
+        try (Connection con = DriverManager.getConnection(DB_URL);
+             PreparedStatement preparedStatement = con.prepareStatement(sql)) {
+            preparedStatement.setLong(1, chatId);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            if (resultSet.next()) {
+                return new Vaccination(
+                        resultSet.getString("name"),
+                        resultSet.getString("date"),
+                        resultSet.getString("next_date")
+                );
+            }
+        } catch (SQLException e) {
+            e.getMessage();
+        }
+        return null;
     }
 }
