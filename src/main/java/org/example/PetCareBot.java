@@ -11,6 +11,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Properties;
 
 public class PetCareBot extends TelegramLongPollingBot {
@@ -69,28 +70,30 @@ public class PetCareBot extends TelegramLongPollingBot {
                         "<b>Pet</b>\n" +
                         "/addnewpet - add new pet\n" +
                         "/mypet - information about your pet\n\n" +
-                        "<b>Reminders</b>\n" +
-                        "/addreminder - add new reminder\n" +
-                        "*/addvaccination  - add date of new vaccination\n" +
-                        "*/addmedecine - add new Medicine");
+                        "<b>Vaccinations</b>\n" +
+                        "/addvaccination  - add date of new vaccination\n" +
+                        "/myvaccinations - show vaccinations\n" +
+                        "<b>Medicines</b>\n" +
+                        "/addmedecine - add new Medicine\n" +
+                        "/mymedicines - show medicines");
             } else if (messageText.equals("/addnewpet")) {
                 message.setText("Enter our pet's details in format:\n" +
                         "<code>Name, Type, Breed, YYYY-MM-DD</code>\n\n");
             } else if (messageText.equals("/mypet")) {
                 Pet pet = usersPets.get(chatId);
-                if (pet != null){
-                message.setText("Information about your pet:\n\n" +
-                        "Name: " + pet.getName() + "\n" +
-                        "Type: " + pet.getType() + "\n" +
-                        "Breed: " + pet.getBreed() + "\n" +
-                        "Date of birth: " + pet.getBirthDate());
-                }else {
+                if (pet != null) {
+                    message.setText("Information about your pet:\n\n" +
+                            "Name: " + pet.getName() + "\n" +
+                            "Type: " + pet.getType() + "\n" +
+                            "Breed: " + pet.getBreed() + "\n" +
+                            "Date of birth: " + pet.getBirthDate());
+                } else {
                     message.setText("No pets with your ID. Use /addnewpet");
                 }
             } else if (messageText.equals("/addvaccination")) {
                 message.setText("Enter vaccination details in format:\n" +
                         "<code>Name, YYYY-MM-DD, YYYY-MM-DD</code>\n\n");
-            } else if (messageText.equals("/addmedecine")) {
+            } else if (messageText.equals("/addmedicine")) {
                 message.setText("Enter medicine details in format:\n" +
                         "<code>Name, dosage, HH:MM, YYYY-MM-DD</code>\n\n");
             } else if (
@@ -176,6 +179,35 @@ public class PetCareBot extends TelegramLongPollingBot {
                     currentMedicine = null;
                 } else {
                     message.setText("No medicine data to save.");
+                }
+
+            } else if (messageText.equals("/myvaccinations")) {
+                List<Vaccination> vaccinations = usersVacc.get(chatId);
+                if (vaccinations != null && !vaccinations.isEmpty()) {
+                    StringBuilder response = new StringBuilder("Your vaccinations:\n\n");
+                    for (Vaccination vacc : vaccinations) {
+                        response.append("*").append(vacc.getName()).append(" - ")
+                                .append(vacc.getDate()).append("\n").append(" next: ")
+                                .append(vacc.getNextDate()).append("\n");
+                    }
+                    message.setText(response.toString());
+                } else {
+                    message.setText("No vaccinations with your ID. Use /addvaccination");
+                }
+
+            } else if (messageText.equals("/mymedicines")) {
+                List<Medicine> medicines = usersMeds.get(chatId);
+                if (medicines != null && !medicines.isEmpty()) {
+                    StringBuilder response = new StringBuilder("Your medicines:\n\n");
+                    for (Medicine medicine : medicines) {
+                        response.append("*").append(medicine.getName()).append(" - ")
+                                .append(medicine.getDosage()).append(" at ")
+                                .append(medicine.getSchedule()).append("\n").append(" next: ")
+                                .append(medicine.getNextDate()).append("\n");
+                    }
+                    message.setText(response.toString());
+                } else {
+                    message.setText("No medicines with your ID. Use /addmedicine");
                 }
 
             } else {
