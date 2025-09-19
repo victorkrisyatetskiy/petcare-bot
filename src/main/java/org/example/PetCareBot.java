@@ -3,22 +3,20 @@ package org.example;
 import org.example.models.Medicine;
 import org.example.models.Pet;
 import org.example.models.Vaccination;
+import org.example.services.ReminderServices;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 
 public class PetCareBot extends TelegramLongPollingBot {
 
-    private HashMap<Long, Pet> usersPets = new HashMap<>();
-    private HashMap<Long, ArrayList<Vaccination>> usersVacc = new HashMap<>();
-    private HashMap<Long, ArrayList<Medicine>> usersMeds = new HashMap<>();
+    private Map<Long, Pet> usersPets = new HashMap<>();
+    private Map<Long, List<Vaccination>> usersVacc = new HashMap<>();
+    private Map<Long, List<Medicine>> usersMeds = new HashMap<>();
 
     private Pet currentPet;
     private Vaccination currentVaccination;
@@ -27,8 +25,12 @@ public class PetCareBot extends TelegramLongPollingBot {
     private String botToken;
     private String botUsername;
 
+    private ReminderServices reminderServices;
+
     public PetCareBot() {
         loadConfig();
+        this.reminderServices = new ReminderServices(this, usersMeds, usersVacc);
+        reminderServices.start();
     }
 
     private void loadConfig() {
