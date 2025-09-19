@@ -24,12 +24,20 @@ public class Vaccination {
 
     public String getId(){ return id;}
 
-    public Vaccination(String name, String date, String nextDate) {
-        this.id = UUID.randomUUID().toString();
+    public void setId(String id){
+        this.id = id;
+    }
+
+    public Vaccination(String id, String name, String date, String nextDate) {
+        this.id = id;
         this.name = name;
         this.date = date;
         this.nextDate = nextDate;
+    }
 
-
+    public Vaccination(String name, String date, String nextDate) {
+        this.name = name;
+        this.date = date;
+        this.nextDate = nextDate;
     }
 }

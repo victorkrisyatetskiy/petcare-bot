@@ -1,8 +1,5 @@
 package org.example.models;
 
-import java.time.LocalDate;
-import java.util.UUID;
-
 public class Medicine {
 
     private String id;
@@ -12,7 +9,14 @@ public class Medicine {
     private String nextDate;
 
     public Medicine(String name, String dosage, String schedule, String nextDate) {
-        this.id = UUID.randomUUID().toString();
+        this.name = name;
+        this.dosage = dosage;
+        this.schedule = schedule;
+        this.nextDate = nextDate;
+    }
+
+    public Medicine(String id, String name, String dosage, String schedule, String nextDate) {
+        this.id = id;
         this.name = name;
         this.dosage = dosage;
         this.schedule = schedule;
@@ -35,5 +39,11 @@ public class Medicine {
         return nextDate;
     }
 
-    public String getId() { return id;}
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 }

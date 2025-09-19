@@ -25,6 +25,7 @@ public class PetCareBot extends TelegramLongPollingBot {
     private String botToken;
     private String botUsername;
 
+
     private ReminderServices reminderServices;
 
     public PetCareBot() {
@@ -271,7 +272,7 @@ public class PetCareBot extends TelegramLongPollingBot {
                         } else {
                             message.setText("Invalid number");
                         }
-                    } catch (NumberFormatException){
+                    } catch (NumberFormatException e){
                         message.setText("Please enter a number");
                     }
                 }
