@@ -1,0 +1,1 @@
+web: java -jar target/petcare-bot-1.0-SNAPSHOT.jar
