@@ -6,19 +6,41 @@ import org.example.models.Vaccination;
 import org.sqlite.core.DB;
 
 import javax.management.DescriptorRead;
+import java.io.InputStream;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 
 public class DatabaseService {
-    private static final String DB_URL = "jdbc:sqlite:viktor_pet_care_bot.db";
-
+    private String dbUrl;
     public DatabaseService() {
+        this.dbUrl = getDatabaseUrl();
         initializeDatabase();
     }
 
+    private String getDatabaseUrl() {
+        String envDbUrl = System.getenv("DATABASE_URL");
+        if (envDbUrl != null){
+            return envDbUrl;
+        }
+        try(InputStream input = getClass().getClassLoader().getResourceAsStream("config.properties")){
+            Properties prop = new Properties();
+            if (input != null){
+                prop.load(input);
+                String configDbUrl = prop.getProperty("database.url");
+                if (configDbUrl != null){
+                    return configDbUrl;
+                }
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+        }
+        return "jdbc:sqlite:viktor_pet_care_bot.db";
+    }
+
     private void initializeDatabase() {
-        try (Connection con = DriverManager.getConnection(DB_URL);
+        try (Connection con = DriverManager.getConnection(dbUrl);
              Statement statement = con.createStatement()) {
             String createPetsTable = """
                     CREATE TABLE IF NOT EXISTS pets (
@@ -74,7 +96,7 @@ public class DatabaseService {
                 WHERE chat_id IS NOT NULL
                 """;
         try(
-                Connection con = DriverManager.getConnection(DB_URL);
+                Connection con = DriverManager.getConnection(dbUrl);
                 Statement statement = con.createStatement();
                 ResultSet resultSet = statement.executeQuery(sql)){
             while (resultSet.next()){
@@ -87,7 +109,7 @@ public class DatabaseService {
 
     public void savePet(long chatId, Pet pet) {
         String sql = "INSERT INTO pets (chat_id, name, type, breed, birth_date) VALUES(?, ?, ?, ?, ?)";
-        try (Connection con = DriverManager.getConnection(DB_URL);
+        try (Connection con = DriverManager.getConnection(dbUrl);
              PreparedStatement preparedStatement = con.prepareStatement(sql)) {
             preparedStatement.setLong(1, chatId);
             preparedStatement.setString(2, pet.getName());
@@ -103,7 +125,7 @@ public class DatabaseService {
     public Pet getPet(long chatId) {
         String sql = "SELECT * FROM pets WHERE chat_id = ?";
         try (
-                Connection con = DriverManager.getConnection(DB_URL);
+                Connection con = DriverManager.getConnection(dbUrl);
                 PreparedStatement preparedStatement = con.prepareStatement(sql)) {
 
             preparedStatement.setLong(1, chatId);
@@ -125,7 +147,7 @@ public class DatabaseService {
 
     public void saveMedicine(long chatId, Medicine medicine) {
         String sql = "INSERT INTO medicines (chat_id, name, dosage, schedule, next_date) VALUES(?, ?, ?, ?, ?)";
-        try (Connection con = DriverManager.getConnection(DB_URL);
+        try (Connection con = DriverManager.getConnection(dbUrl);
              PreparedStatement preparedStatement = con.prepareStatement(sql)) {
             preparedStatement.setLong(1, chatId);
             preparedStatement.setString(2, medicine.getName());
@@ -141,7 +163,7 @@ public class DatabaseService {
     public List<Medicine> getMedicine(long chatId) {
         List<Medicine> medicines = new ArrayList<>();
         String sql = "SELECT * FROM medicines WHERE chat_id = ? ORDER BY id";
-        try (Connection con = DriverManager.getConnection(DB_URL);
+        try (Connection con = DriverManager.getConnection(dbUrl);
              PreparedStatement preparedStatement = con.prepareStatement(sql)) {
             preparedStatement.setLong(1, chatId);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -163,7 +185,7 @@ public class DatabaseService {
 
     public void saveVaccination(long chatId, Vaccination vaccination){
         String sql = "INSERT INTO vaccinations (chat_id, name, date, next_date) VALUES(?, ?, ?, ?)";
-        try (Connection con = DriverManager.getConnection(DB_URL);
+        try (Connection con = DriverManager.getConnection(dbUrl);
              PreparedStatement preparedStatement = con.prepareStatement(sql)) {
                  preparedStatement.setLong(1, chatId);
                  preparedStatement.setString(2, vaccination.getName());
@@ -178,7 +200,7 @@ public class DatabaseService {
     public List<Vaccination> getVaccination(long chatId){
         List<Vaccination> vaccinations = new ArrayList<>();
         String sql = "SELECT * FROM vaccinations WHERE chat_id = ? ORDER BY id";
-        try (Connection con = DriverManager.getConnection(DB_URL);
+        try (Connection con = DriverManager.getConnection(dbUrl);
              PreparedStatement preparedStatement = con.prepareStatement(sql)) {
             preparedStatement.setLong(1, chatId);
             ResultSet resultSet = preparedStatement.executeQuery();
@@ -199,7 +221,7 @@ public class DatabaseService {
 
     public void deletePet(long chatId){
         String sql = "DELETE FROM pets WHERE chat_id = ?";
-        try(Connection con = DriverManager.getConnection(DB_URL);
+        try(Connection con = DriverManager.getConnection(dbUrl);
         PreparedStatement preparedStatement = con.prepareStatement(sql)){
             preparedStatement.setLong(1, chatId);
             int rowDeleted = preparedStatement.executeUpdate();
@@ -227,7 +249,7 @@ public class DatabaseService {
         String sql = "DELETE FROM medicines WHERE id = ? AND chat_id = ?";
 
         try(
-                Connection con = DriverManager.getConnection(DB_URL);
+                Connection con = DriverManager.getConnection(dbUrl);
                 PreparedStatement preparedStatement = con.prepareStatement(sql)) {
             preparedStatement.setLong(1, Long.parseLong(medId));
             preparedStatement.setLong(2, chatId);
@@ -258,7 +280,7 @@ public class DatabaseService {
             String sql = "DELETE FROM vaccinations WHERE id = ? AND chat_id = ?";
 
             try(
-                    Connection con = DriverManager.getConnection(DB_URL);
+                    Connection con = DriverManager.getConnection(dbUrl);
                     PreparedStatement preparedStatement = con.prepareStatement(sql)) {
                 preparedStatement.setLong(1, Long.parseLong(vacId));
                 preparedStatement.setLong(2, chatId);
