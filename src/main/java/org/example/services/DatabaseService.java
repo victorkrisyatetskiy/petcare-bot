@@ -3,6 +3,7 @@ package org.example.services;
 import org.example.models.Medicine;
 import org.example.models.Pet;
 import org.example.models.Vaccination;
+import org.sqlite.core.DB;
 
 import javax.management.DescriptorRead;
 import java.sql.*;
@@ -58,6 +59,30 @@ public class DatabaseService {
         } catch (SQLException e) {
             e.printStackTrace();
         }
+    }
+
+    public List<Long> getAllUsersWithData(){
+        List<Long> chatIds = new ArrayList<>();
+        String sql = """
+                SELECT DISTINCT chat_id FROM (
+                SELECT chat_id FROM pets
+                UNION
+                SELECT chat_id FROM medicines
+                UNION
+                SELECT chat_id FROM vaccinations
+                )
+                WHERE chat_id IS NOT NULL
+                """;
+        try(
+                Connection con = DriverManager.getConnection(DB_URL);
+                Statement statement = con.createStatement();
+                ResultSet resultSet = statement.executeQuery(sql)){
+            while (resultSet.next()){
+                chatIds.add(resultSet.getLong("chat_id"));
+            }
+        }catch (SQLException e){
+            e.printStackTrace();
+        } return chatIds;
     }
 
     public void savePet(long chatId, Pet pet) {
@@ -189,45 +214,61 @@ public class DatabaseService {
     }
 
     public void deleteMedicine(long chatId, int index){
-        String sql = "DELETE FROM medicines WHERE chat_id = (" +
-                "SELECT id FROM medicines " +
-                "WHERE chat_id = ? " +
-                "ORDER BY id " +
-                "LIMIT 1 OFFSET ?" +
-                ")";
+        try{
+        List<Medicine> medicines = getMedicine(chatId);
 
-        try(Connection con = DriverManager.getConnection(DB_URL);
-        PreparedStatement preparedStatement = con.prepareStatement(sql)){
+        if (medicines == null || index < 0 || index >= medicines.size()) {
+            System.out.println("No medicine found at number: " + index);
+            return;
+        }
+        Medicine medToDelete = medicines.get(index);
+        String medId = medToDelete.getId();
 
-            preparedStatement.setLong(1, chatId);
-            preparedStatement.setInt(2, index);
-            int rowDeleted = preparedStatement.executeUpdate();
-            if(rowDeleted > 0){
-                System.out.println("Medicine deleted");
-            }else {
-                System.out.println("Mo medicine with index " + index);
+        String sql = "DELETE FROM medicines WHERE id = ? AND chat_id = ?";
+
+        try(
+                Connection con = DriverManager.getConnection(DB_URL);
+                PreparedStatement preparedStatement = con.prepareStatement(sql)) {
+            preparedStatement.setLong(1, Long.parseLong(medId));
+            preparedStatement.setLong(2, chatId);
+
+            int rowsDeleted = preparedStatement.executeUpdate();
+            if (rowsDeleted > 0) {
+                System.out.println("Medicine deleted: " + medToDelete.getName());
+            } else {
+                System.out.println("Failed to delete");
             }
+        }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
     }
 
     public void deleteVaccination(long chatId, int index){
-        String sql = "DELETE FROM vaccinations WHERE chat_id = (" +
-                "SELECT id FROM vaccinations " +
-                "WHERE chat_id = ? " +
-                "ORDER BY id " +
-                "LIMIT 1 OFFSET ?" +
-                ")";
-        try(Connection con = DriverManager.getConnection(DB_URL);
-        PreparedStatement preparedStatement = con.prepareStatement(sql)){
-            preparedStatement.setLong(1, chatId);
-            preparedStatement.setInt(2, index);
-            int rowDeleted = preparedStatement.executeUpdate();
-            if (rowDeleted > 0){
-                System.out.println("Vaccination deleted");
-            }else {
-                System.out.println("No vaccination with index " + index);
+        try{
+            List<Vaccination> vaccinations = getVaccination(chatId);
+
+            if (vaccinations == null || index < 0 || index >= vaccinations.size()) {
+                System.out.println("No vaccination found at number: " + index);
+                return;
+            }
+            Vaccination vacToDelete = vaccinations.get(index);
+            String vacId = vacToDelete.getId();
+
+            String sql = "DELETE FROM vaccinations WHERE id = ? AND chat_id = ?";
+
+            try(
+                    Connection con = DriverManager.getConnection(DB_URL);
+                    PreparedStatement preparedStatement = con.prepareStatement(sql)) {
+                preparedStatement.setLong(1, Long.parseLong(vacId));
+                preparedStatement.setLong(2, chatId);
+
+                int rowsDeleted = preparedStatement.executeUpdate();
+                if (rowsDeleted > 0) {
+                    System.out.println("Vaccination deleted: " + vacToDelete.getName());
+                } else {
+                    System.out.println("Failed to delete");
+                }
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);

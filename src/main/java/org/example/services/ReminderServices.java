@@ -15,20 +15,18 @@ import java.util.TimerTask;
 public class ReminderServices {
 
     private final PetCareBot bot;
-    private final Map<Long, List<Medicine>> usersMedicines;
-    private final Map<Long, List<Vaccination>> usersVaccinations;
+    private final DatabaseService databaseService;
     private Timer timer;
 
 
-    public ReminderServices(PetCareBot bot, Map<Long, List<Medicine>> usersMedicines, Map<Long, List<Vaccination>> usersVaccinations) {
+    public ReminderServices(PetCareBot bot, DatabaseService databaseService) {
         this.bot = bot;
-        this.usersMedicines = usersMedicines;
-        this.usersVaccinations = usersVaccinations;
+        this.databaseService = databaseService;
     }
 
     public void start() {
         timer = new Timer();
-        timer.schedule(new ReminderTask(), 0, 60000);
+        timer.schedule(new ReminderTask(), 0, 86400000);
     }
 
     public void stop() {
@@ -46,42 +44,52 @@ public class ReminderServices {
         private void checkReminders() {
             try {
                 LocalDate today = LocalDate.now();
-                for (Long chatId : usersMedicines.keySet()) {
-                    checkMedicineReminders(chatId, today);
+                System.out.println("Checking reminders for: "  + today);
+                List<Long> allUsers = databaseService.getAllUsersWithData();
+                for (Long chatId: allUsers){
+                    checkUserReminders(chatId, today);
                 }
-                for (Long chatId : usersVaccinations.keySet()){
-                    checkVaccinationsReminders(chatId, today);
-                }
+                System.out.println("Checked reminders for " + allUsers.size() + " users.");
             } catch (Exception e) {
-                e.getMessage();
+                e.printStackTrace();
             }
         }
 
-        private void checkMedicineReminders(Long chatId, LocalDate today) {
-            List<Medicine> medicines = usersMedicines.get(chatId);
-            if (medicines != null) {
-                for (Medicine med : medicines) {
-                    LocalDate nextDate = LocalDate.parse(med.getNextDate());
-                    if (!nextDate.isAfter(today)){
-                        sendReminder(chatId, "Time for medicine: " +
-                                med.getName() + med.getDosage());
-                    }
-                }
+        private void checkUserReminders(Long chatId, LocalDate today) {
+            try {
+                checkMedicines(chatId, today);
+                checkVaccinations(chatId, today);
+
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         }
 
-        private void checkVaccinationsReminders(Long chatId, LocalDate today){
-            List<Vaccination> vaccinations = usersVaccinations.get(chatId);
+        private void checkVaccinations(Long chatId, LocalDate today) {
+            List<Vaccination> vaccinations = databaseService.getVaccination(chatId);
             if (vaccinations != null){
                 for (Vaccination vacc : vaccinations){
-                    LocalDate nextDate = LocalDate.parse(vacc.getNextDate());
-                    if (!nextDate.isAfter(today)){
-                        sendReminder(chatId, "Vaccine day soon: "+
-                                vacc.getName() );
+                    LocalDate nextDay = LocalDate.parse(vacc.getNextDate());
+                    if (nextDay.equals(today) || nextDay.isBefore(today)){
+                        sendReminder(chatId, "Time for vaccination" + vacc.getName());
                     }
                 }
             }
         }
+
+        private void checkMedicines(Long chatId, LocalDate today) {
+
+            List<Medicine> medicines = databaseService.getMedicine(chatId);
+            if (medicines != null){
+                for (Medicine med: medicines){
+                    LocalDate nextDay = LocalDate.parse(med.getNextDate());
+                    if (nextDay.equals(today) || nextDay.isBefore(today)){
+                        sendReminder(chatId,"Time for medicine: " + med.getName() + med.getDosage() + "at " + med.getSchedule());
+                    }
+                }
+            }
+        }
+
 
         private void sendReminder(Long chatId, String text) {
             try {

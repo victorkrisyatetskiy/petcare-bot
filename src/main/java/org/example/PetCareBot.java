@@ -3,6 +3,7 @@ package org.example;
 import org.example.models.Medicine;
 import org.example.models.Pet;
 import org.example.models.Vaccination;
+import org.example.services.DatabaseService;
 import org.example.services.ReminderServices;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -10,17 +11,16 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.io.InputStream;
-import java.util.*;
+import java.util.List;
+import java.util.Properties;
 
 public class PetCareBot extends TelegramLongPollingBot {
 
-    private Map<Long, Pet> usersPets = new HashMap<>();
-    private Map<Long, List<Vaccination>> usersVacc = new HashMap<>();
-    private Map<Long, List<Medicine>> usersMeds = new HashMap<>();
 
     private Pet currentPet;
     private Vaccination currentVaccination;
     private Medicine currentMedicine;
+    private DatabaseService databaseService;
 
     private String botToken;
     private String botUsername;
@@ -28,11 +28,16 @@ public class PetCareBot extends TelegramLongPollingBot {
 
     private ReminderServices reminderServices;
 
+
+
     public PetCareBot() {
         loadConfig();
-        this.reminderServices = new ReminderServices(this, usersMeds, usersVacc);
+        this.databaseService = new DatabaseService();
+        this.reminderServices = new ReminderServices(this, databaseService);
         reminderServices.start();
     }
+
+
 
     private void loadConfig() {
         try {
@@ -59,43 +64,50 @@ public class PetCareBot extends TelegramLongPollingBot {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
 
+            if (!messageText.startsWith("/")){
+                SendMessage welcome = new SendMessage();
+                welcome.setChatId(String.valueOf(chatId));
+                welcome.setText("Welcome! I'm your Pet Care Assistant. Use /start to begin");
+                try {
+                    execute(welcome);
+                }catch (TelegramApiException e){
+                    e.printStackTrace();
+                }return;
+            }
+
             SendMessage message = new SendMessage();
             message.setChatId(String.valueOf(chatId));
             message.setParseMode("HTML");
 
             if (messageText.equals("/start")) {
-                message.setText("Hello! I am your bot for pet care!");
+                message.setText("<b>Welcome! I'm your Pet Care Assistant!</b>\n\n" +
+                        "I can help you to manage your pet's health\n" +
+                        "<b>What would you like to do</b>\n\n" +
+                        "Add your pet -> /addnewpet\n" +
+                        "Add medicine -> /addmedicien\n" +
+                        "Add vaccination -> /addvaccination\n" +
+                        "See all commands -> /help"
+                );
             } else if (messageText.equals("/help")) {
-                message.setText("<b>Pet Care Assistant</b>\n\n" +
-                        "Available commands:\n\n" +
+                message.setText("<b>Pet Care Assistant - Command list</b>\n\n" +
+                        "Main commands:\n\n" +
                         "/start - start the work\n" +
                         "/help\n\n" +
-                        "<b>Pet</b>\n" +
+                        "<b>Pet commands</b>\n" +
                         "/addnewpet - add new pet\n" +
                         "/mypet - information about your pet\n\n" +
                         "<b>Vaccinations</b>\n" +
-                        "/addvaccination  - add date of new vaccination\n" +
-                        "/myvaccinations - show vaccinations\n" +
+                        "/addvaccination - add date of new vaccination\n" +
+                        "/myvaccinations - show vaccinations\n\n" +
                         "<b>Medicines</b>\n" +
-                        "/addmedecine - add new Medicine\n" +
+                        "/addmedicine - add new Medicine\n" +
                         "/mymedicines - show medicines\n" +
                         "<b>Delete</b>\n" +
                         "/deletemedicine - remove medicine\n" +
-                        "/deletevacination - remove vaccination");
+                        "/deletevaccination - remove vaccination");
             } else if (messageText.equals("/addnewpet")) {
                 message.setText("Enter our pet's details in format:\n" +
                         "<code>Name, Type, Breed, YYYY-MM-DD</code>\n\n");
-            } else if (messageText.equals("/mypet")) {
-                Pet pet = usersPets.get(chatId);
-                if (pet != null) {
-                    message.setText("Information about your pet:\n\n" +
-                            "Name: " + pet.getName() + "\n" +
-                            "Type: " + pet.getType() + "\n" +
-                            "Breed: " + pet.getBreed() + "\n" +
-                            "Date of birth: " + pet.getBirthDate());
-                } else {
-                    message.setText("No pets with your ID. Use /addnewpet");
-                }
             } else if (messageText.equals("/addvaccination")) {
                 message.setText("Enter vaccination details in format:\n" +
                         "<code>Name, YYYY-MM-DD, YYYY-MM-DD</code>\n\n");
@@ -162,16 +174,26 @@ public class PetCareBot extends TelegramLongPollingBot {
                 }
             } else if (messageText.equals("/savepet")) {
                 if (currentPet != null) {
-                    usersPets.put(chatId, currentPet);
+                    databaseService.savePet(chatId, currentPet);
                     message.setText("Pet saved! Use /mypet to view");
                     currentPet = null;
                 } else {
                     message.setText("No pet data to save.");
                 }
+            } else if (messageText.equals("/mypet")) {
+                Pet pet = databaseService.getPet(chatId);
+                if (pet != null) {
+                    message.setText("Information about your pet:\n\n" +
+                            "Name: " + pet.getName() + "\n" +
+                            "Type: " + pet.getType() + "\n" +
+                            "Breed: " + pet.getBreed() + "\n" +
+                            "Date of birth: " + pet.getBirthDate());
+                } else {
+                    message.setText("No pets with your ID. Use /addnewpet");
+                }
             } else if (messageText.equals("/savevacc")) {
                 if (currentVaccination != null) {
-                    usersVacc.putIfAbsent(chatId, new ArrayList<>());
-                    usersVacc.get(chatId).add(currentVaccination);
+                    databaseService.saveVaccination(chatId, currentVaccination);
                     message.setText("Vaccination saved!");
                     currentVaccination = null;
                 } else {
@@ -179,8 +201,7 @@ public class PetCareBot extends TelegramLongPollingBot {
                 }
             } else if (messageText.equals("/savemed")) {
                 if (currentMedicine != null) {
-                    usersMeds.putIfAbsent(chatId, new ArrayList<>());
-                    usersMeds.get(chatId).add(currentMedicine);
+                    databaseService.saveMedicine(chatId, currentMedicine);
                     message.setText("Medicine saved!");
                     currentMedicine = null;
                 } else {
@@ -188,7 +209,7 @@ public class PetCareBot extends TelegramLongPollingBot {
                 }
 
             } else if (messageText.equals("/myvaccinations")) {
-                List<Vaccination> vaccinations = usersVacc.get(chatId);
+                List<Vaccination> vaccinations = databaseService.getVaccination(chatId);
                 if (vaccinations != null && !vaccinations.isEmpty()) {
                     StringBuilder response = new StringBuilder("Your vaccinations:\n\n");
                     for (Vaccination vacc : vaccinations) {
@@ -202,7 +223,7 @@ public class PetCareBot extends TelegramLongPollingBot {
                 }
 
             } else if (messageText.equals("/mymedicines")) {
-                List<Medicine> medicines = usersMeds.get(chatId);
+                List<Medicine> medicines = databaseService.getMedicine(chatId);
                 if (medicines != null && !medicines.isEmpty()) {
                     StringBuilder response = new StringBuilder("Your medicines:\n\n");
                     for (Medicine medicine : medicines) {
@@ -217,7 +238,7 @@ public class PetCareBot extends TelegramLongPollingBot {
                 }
 
             } else if (messageText.equals("/deletemedicine")) {
-                List<Medicine> medicines = usersMeds.get(chatId);
+                List<Medicine> medicines = databaseService.getMedicine(chatId);
                 if (medicines != null && !medicines.isEmpty()) {
                     StringBuilder response = new StringBuilder("Select medicine fo delete: \n\n");
                     for (int i = 0; i < medicines.size(); i++) {
@@ -231,12 +252,12 @@ public class PetCareBot extends TelegramLongPollingBot {
                 }
 
             } else if (messageText.equals("/deletevaccination")) {
-                List<Vaccination> vaccinations = usersVacc.get(chatId);
+                List<Vaccination> vaccinations = databaseService.getVaccination(chatId);
                 if (vaccinations != null && !vaccinations.isEmpty()) {
                     StringBuilder response = new StringBuilder("Select vaccination to delete: \n\n");
                     for (int i = 0; i < vaccinations.size(); i++) {
                         Vaccination vacc = vaccinations.get(i);
-                        response.append(i + 1).append(". ").append(vacc.getNextDate());
+                        response.append(i + 1).append(". ").append(vacc.getName());
 
                     }
                     response.append("\nReply with the number to delete");
@@ -245,35 +266,35 @@ public class PetCareBot extends TelegramLongPollingBot {
                     message.setText("No vaccination to delete");
                 }
 
-            } else if (messageText.matches("\\d+") && usersMeds.containsKey(chatId)) {
+            } else if (messageText.matches("\\d+")) {
                 {
                     try {
                         int index = Integer.parseInt(messageText) - 1;
-                        List<Medicine> medicines = usersMeds.get(chatId);
-                        if (index >= 0 && index < medicines.size()) {
-                            Medicine removed = medicines.remove(index);
-                            message.setText("Removed: " + removed.getName());
-                        } else {
-                            message.setText("Invalid number");
+                        System.out.println("Attempting to delete item at index: " + index);
+                        List<Medicine> medicines = databaseService.getMedicine(chatId);
+                        if (medicines != null && index >= 0 && index < medicines.size()) {
+                            String medName = medicines.get(index).getName();
+                            databaseService.deleteMedicine(chatId, index);
+                            message.setText("Medicine: " + medName + " deleted");
+                            execute(message);
+                            return;
                         }
+
+                        List<Vaccination> vaccinations = databaseService.getVaccination(chatId);
+                        if (vaccinations != null && index >= 0 && index < vaccinations.size()) {
+                            String vacName = vaccinations.get(index).getName();
+                            databaseService.deleteVaccination(chatId, index);
+                            message.setText("Vaccination: " + vacName + " deleted.");
+                            execute(message);
+                            return;
+                        }
+                            message.setText("Invalid number");
+                        execute(message);
+
                     } catch (NumberFormatException e) {
                         message.setText("Please enter a number");
-                    }
-                }
-
-            } else if (messageText.matches("\\d+") && usersVacc.containsKey(chatId)) {
-                {
-                    try{
-                        int index = Integer.parseInt(messageText) - 1;
-                        List<Vaccination> vaccinations = usersVacc.get(chatId);
-                        if (index >= 0 && index < vaccinations.size()){
-                            Vaccination removed = vaccinations.remove(index);
-                            message.setText("Removed: " + removed.getName());
-                        } else {
-                            message.setText("Invalid number");
-                        }
-                    } catch (NumberFormatException e){
-                        message.setText("Please enter a number");
+                    } catch (TelegramApiException e) {
+                        e.printStackTrace();
                     }
                 }
 
