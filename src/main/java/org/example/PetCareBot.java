@@ -98,7 +98,7 @@ public class PetCareBot extends TelegramLongPollingBot {
                         "I can help you to manage your pet's health.\n\n" +
                         "<b>What would you like to do</b>\n\n" +
                         "Add your pet -> /addnewpet\n" +
-                        "Add medicine -> /addmedicien\n" +
+                        "Add medicine -> /addmedicine\n" +
                         "Add vaccination -> /addvaccination\n" +
                         "See all commands -> /help"
                 );
