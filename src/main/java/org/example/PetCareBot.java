@@ -87,16 +87,7 @@ public class PetCareBot extends TelegramLongPollingBot {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
 
-            if (!messageText.startsWith("/")){
-                SendMessage welcome = new SendMessage();
-                welcome.setChatId(String.valueOf(chatId));
-                welcome.setText("Welcome! I'm your Pet Care Assistant. Use /start to begin");
-                try {
-                    execute(welcome);
-                }catch (TelegramApiException e){
-                    e.printStackTrace();
-                }return;
-            }
+
 
             SendMessage message = new SendMessage();
             message.setChatId(String.valueOf(chatId));
