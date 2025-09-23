@@ -20,25 +20,57 @@ public class DatabaseService {
     }
 
     private String getDatabaseUrl() {
+        String envDbUrl = System.getenv("DATABASE_URL");
+
+        if (envDbUrl != null) {
+            System.out.println("Original DATABASE_URL: " + envDbUrl);
+
+            if (envDbUrl.startsWith("postgresql://")) {
+                try {
+                    String cleanUrl = envDbUrl.substring("postgresql://".length());
+                    int atIndex = cleanUrl.indexOf('@');
+
+                    if (atIndex != -1) {
+                        String credentials = cleanUrl.substring(0, atIndex);
+                        String hostDb = cleanUrl.substring(atIndex + 1);
+
+                        int colonIndex = credentials.indexOf(':');
+                        if (colonIndex != -1) {
+                            String user = credentials.substring(0, colonIndex);
+                            String password = credentials.substring(colonIndex + 1);
+
+                            String jdbcUrl = "jdbc:postgresql://" + hostDb + "?user=" + user + "&password=" + password;
+                            System.out.println("Converted JDBC URL: " + jdbcUrl);
+                            return jdbcUrl;
+                        }
+                    }
+                } catch (Exception e) {
+                    System.out.println("Error parsing DATABASE_URL: " + e.getMessage());
+                }
+            }
+
+            String simpleUrl = envDbUrl.replace("postgresql://", "jdbc:postgresql://");
+            System.out.println("Simple converted URL: " + simpleUrl);
+            return simpleUrl;
+        }
+
+
         String host = System.getenv("PGHOST");
         String port = System.getenv("PGPORT");
         String database = System.getenv("PGDATABASE");
         String user = System.getenv("PGUSER");
         String password = System.getenv("PGPASSWORD");
-        if(host != null && port != null && database != null && user != null && password != null){
-            return "jdbc:postgresql://" + host + ":" + port + "/" + database +
+
+        if (host != null && port != null && database != null && user != null && password != null) {
+            String url = "jdbc:postgresql://" + host + ":" + port + "/" + database +
                     "?user=" + user + "&password=" + password;
+            System.out.println("Built URL from env vars: " + url);
+            return url;
         }
 
-        String envDbUrl = System.getenv("DATABASE_URL");
-        if (envDbUrl != null) {
-            if (envDbUrl.startsWith("postgresql://")) {
-                return "jdbc:" + envDbUrl;
-            }
-            return envDbUrl;
-        }
-        System.out.println("DEBUG: Using fallback PostgreSQL");
-        return "jdbc:postgresql://localhost:5432/petcare";
+
+        System.out.println("Using fallback PostgreSQL URL");
+        return "jdbc:postgresql://localhost:5432/petcare?user=postgres&password=postgres";
     }
 
     private void initializeDatabase() {
