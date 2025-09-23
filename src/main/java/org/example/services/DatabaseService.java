@@ -15,13 +15,14 @@ public class DatabaseService {
 
     public DatabaseService() {
         this.dbUrl = getDatabaseUrl();
+        System.out.println("FINAL DB URL: " + this.dbUrl);
         initializeDatabase();
     }
 
     private String getDatabaseUrl() {
         String envDbUrl = System.getenv("DATABASE_URL");
         if (envDbUrl != null) {
-            if (envDbUrl.startsWith("postrsql://")) {
+            if (envDbUrl.startsWith("postgresql://")) {
                 return "jdbc:" + envDbUrl;
             }
             return envDbUrl;
