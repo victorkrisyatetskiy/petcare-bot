@@ -31,27 +31,50 @@ public class PetCareBot extends TelegramLongPollingBot {
 
 
     public PetCareBot() {
-        loadConfig();
-        this.databaseService = new DatabaseService();
-        this.reminderServices = new ReminderServices(this, databaseService);
-        reminderServices.start();
+        try {
+            loadConfig();
+            this.databaseService = new DatabaseService();
+            this.reminderServices = new ReminderServices(this, databaseService);
+            reminderServices.start();
+            System.out.println("PetCareBot started successfully!");
+        } catch (Exception e) {
+            System.err.println("Failed to start PetCareBot: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
+        }
     }
 
 
 
     private void loadConfig() {
-        try {
-            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("config.properties");
-            Properties prop = new Properties();
-            prop.load(inputStream);
+        this.botToken = System.getenv("BOT_TOKEN");
+        this.botUsername = System.getenv("BOT_USERNAME");
+        if (this.botToken == null || this.botUsername == null) {
+            try(InputStream input = getClass().getClassLoader().getResourceAsStream("config.properties")){
+                if (input == null){
+                    throw new RuntimeException("Config file not found and no environment variables set");
+                }
 
-            botToken = prop.getProperty("bot.token");
-            botUsername = prop.getProperty("bot.username");
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+                Properties prop = new Properties();
+                prop.load(input);
+
+                this.botToken = prop.getProperty("bot.token");
+                this.botUsername = prop.getProperty("bot.username");
+
+                System.out.println("Config loaded from file");
+            } catch (Exception e) {
+                throw new RuntimeException("Error loading config: " + e.getMessage());
+            }
+        }else {
+            System.out.println("Config loaded from environment variables");
         }
-
+        if (this.botToken == null || this.botUsername == null){
+            throw new RuntimeException("Bot token and username must be set via environment variables or config file");
+        }
+        System.out.println("Bot configured: " + this.botUsername);
     }
+
+
 
     @Override
     public String getBotToken() {
