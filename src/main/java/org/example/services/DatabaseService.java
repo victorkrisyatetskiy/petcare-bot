@@ -20,6 +20,16 @@ public class DatabaseService {
     }
 
     private String getDatabaseUrl() {
+        String host = System.getenv("PGHOST");
+        String port = System.getenv("PGPORT");
+        String database = System.getenv("PGDATABASE");
+        String user = System.getenv("PGUSER");
+        String password = System.getenv("PGPASSWORD");
+        if(host != null && port != null && database != null && user != null && password != null){
+            return "jdbc:postgresql://" + host + ":" + port + "/" + database +
+                    "?user=" + user + "&password=" + password;
+        }
+
         String envDbUrl = System.getenv("DATABASE_URL");
         if (envDbUrl != null) {
             if (envDbUrl.startsWith("postgresql://")) {
@@ -27,18 +37,7 @@ public class DatabaseService {
             }
             return envDbUrl;
         }
-        try (InputStream input = getClass().getClassLoader().getResourceAsStream("config.properties")) {
-            Properties prop = new Properties();
-            if (input != null) {
-                prop.load(input);
-                String configDbUrl = prop.getProperty("database.url");
-                if (configDbUrl != null) {
-                    return configDbUrl;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        System.out.println("DEBUG: Using fallback PostgreSQL");
         return "jdbc:postgresql://localhost:5432/petcare";
     }
 
