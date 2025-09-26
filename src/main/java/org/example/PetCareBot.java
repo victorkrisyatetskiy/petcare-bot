@@ -90,7 +90,7 @@ public class PetCareBot extends TelegramLongPollingBot {
             message.setParseMode("HTML");
 
             if (messageText.equals("/start")) {
-                if (messageText.equals("/start") || messageText.equals("/start welcome")) {
+
                     message.setText("<b>Welcome! I'm your Pet Care Assistant!</b>\n\n" +
                             "I can help you to manage your pet's health.\n\n" +
                             "<b>What would you like to do</b>\n\n" +
@@ -99,7 +99,7 @@ public class PetCareBot extends TelegramLongPollingBot {
                             "Add vaccination -> /addvaccination\n" +
                             "See all commands -> /help"
                     );
-                }
+
             } else if (messageText.equals("/help")) {
                 message.setText("<b>Pet Care Assistant - Command list</b>\n\n" +
                         "Main commands:\n\n" +
