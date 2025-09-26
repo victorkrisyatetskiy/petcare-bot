@@ -90,7 +90,6 @@ public class PetCareBot extends TelegramLongPollingBot {
             message.setParseMode("HTML");
 
             if (messageText.equals("/start")) {
-
                     message.setText("<b>Welcome! I'm your Pet Care Assistant!</b>\n\n" +
                             "I can help you to manage your pet's health.\n\n" +
                             "<b>What would you like to do</b>\n\n" +
