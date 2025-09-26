@@ -29,7 +29,6 @@ public class PetCareBot extends TelegramLongPollingBot {
     private ReminderServices reminderServices;
 
 
-
     public PetCareBot() {
         try {
             loadConfig();
@@ -45,13 +44,12 @@ public class PetCareBot extends TelegramLongPollingBot {
     }
 
 
-
     private void loadConfig() {
         this.botToken = System.getenv("BOT_TOKEN");
         this.botUsername = System.getenv("BOT_USERNAME");
         if (this.botToken == null || this.botUsername == null) {
-            try(InputStream input = getClass().getClassLoader().getResourceAsStream("config.properties")){
-                if (input == null){
+            try (InputStream input = getClass().getClassLoader().getResourceAsStream("config.properties")) {
+                if (input == null) {
                     throw new RuntimeException("Config file not found and no environment variables set");
                 }
 
@@ -65,15 +63,14 @@ public class PetCareBot extends TelegramLongPollingBot {
             } catch (Exception e) {
                 throw new RuntimeException("Error loading config: " + e.getMessage());
             }
-        }else {
+        } else {
             System.out.println("Config loaded from environment variables");
         }
-        if (this.botToken == null || this.botUsername == null){
+        if (this.botToken == null || this.botUsername == null) {
             throw new RuntimeException("Bot token and username must be set via environment variables or config file");
         }
         System.out.println("Bot configured: " + this.botUsername);
     }
-
 
 
     @Override
@@ -88,20 +85,21 @@ public class PetCareBot extends TelegramLongPollingBot {
             long chatId = update.getMessage().getChatId();
 
 
-
             SendMessage message = new SendMessage();
             message.setChatId(String.valueOf(chatId));
             message.setParseMode("HTML");
 
             if (messageText.equals("/start")) {
-                message.setText("<b>Welcome! I'm your Pet Care Assistant!</b>\n\n" +
-                        "I can help you to manage your pet's health.\n\n" +
-                        "<b>What would you like to do</b>\n\n" +
-                        "Add your pet -> /addnewpet\n" +
-                        "Add medicine -> /addmedicine\n" +
-                        "Add vaccination -> /addvaccination\n" +
-                        "See all commands -> /help"
-                );
+                if (messageText.equals("/start") || messageText.equals("/start welcome")) {
+                    message.setText("<b>Welcome! I'm your Pet Care Assistant!</b>\n\n" +
+                            "I can help you to manage your pet's health.\n\n" +
+                            "<b>What would you like to do</b>\n\n" +
+                            "Add your pet -> /addnewpet\n" +
+                            "Add medicine -> /addmedicine\n" +
+                            "Add vaccination -> /addvaccination\n" +
+                            "See all commands -> /help"
+                    );
+                }
             } else if (messageText.equals("/help")) {
                 message.setText("<b>Pet Care Assistant - Command list</b>\n\n" +
                         "Main commands:\n\n" +
@@ -302,7 +300,7 @@ public class PetCareBot extends TelegramLongPollingBot {
                             execute(message);
                             return;
                         }
-                            message.setText("Invalid number");
+                        message.setText("Invalid number");
                         execute(message);
 
                     } catch (NumberFormatException e) {
